@@ -1,0 +1,26 @@
+{
+    "version": 4,
+    "configurations": [
+      {
+        "name": "Mac Clang++",
+        "intelliSenseMode": "macos-clang-arm64",
+        // or "macclang-x64" if on x86_64
+        "compilerPath": "/usr/bin/clang++",
+        "includePath": [
+          // The include paths from your wx-config --cxxflags
+          "/opt/homebrew/lib/wx/include/osx_cocoa-unicode-3.2",
+          "/opt/homebrew/include/wx-3.2"
+        ],
+        "defines": [
+          "WXUSINGDLL",
+          "__WXOSX_COCOA__",
+          "__WXMAC__",
+          "__WXOSX__",
+          "_FILE_OFFSET_BITS=64"
+        ],
+        "cppStandard": "c++17",
+        "cStandard": "c11"
+      }
+    ]
+  }
+  
