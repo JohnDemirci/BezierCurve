@@ -4,7 +4,6 @@
 #include <wx/wx.h>
 #include <wx/notebook.h>
 #include "../BezierCurvePanel/BezierCurvePanel.h"
-
 // Define a custom event ID
 enum {
     ID_NEW_TAB = wxID_HIGHEST + 1,
