@@ -15,38 +15,32 @@ private:
     wxSlider* zoomSlider;
     wxStaticText* zoomLabel;
     
-    // Store points for the Bezier curve
     std::vector<wxPoint> controlPoints;
-    int selectedPointIndex = -1;  // -1 means no point is selected
+    int selectedPointIndex = -1;
     const int POINT_RADIUS = 6;
     const int MAX_CONTROL_POINTS = 4;
     
-    // Zoom related variables
     double zoomFactor = 1.0;
     wxPoint panOffset = wxPoint(0, 0);
     wxPoint dragStart;
     bool isPanning = false;
     
-    // Convert between screen and world coordinates
-    wxPoint WorldToScreen(const wxPoint& point);
-    wxPoint ScreenToWorld(const wxPoint& point);
+    wxPoint worldToScreen(const wxPoint& point);
+    wxPoint screenToWorld(const wxPoint& point);
     
-    // Mouse event handlers
-    void OnMouseDown(wxMouseEvent& event);
-    void OnMouseUp(wxMouseEvent& event);
-    void OnMouseMove(wxMouseEvent& event);
-    void OnMouseWheel(wxMouseEvent& event);
-    void OnPaint(wxPaintEvent& event);
-    void OnZoomSlider(wxCommandEvent& event);
-    void OnKeyDown(wxKeyEvent& event);
+    void onMouseDown(wxMouseEvent& event);
+    void onMouseUp(wxMouseEvent& event);
+    void onMouseMove(wxMouseEvent& event);
+    void onMouseWheel(wxMouseEvent& event);
+    void onPaint(wxPaintEvent& event);
+    void onZoomSlider(wxCommandEvent& event);
+    void onKeyDown(wxKeyEvent& event);
     
-    // Helper methods
-    int HitTest(const wxPoint& pos);
-    void InitializeDefaultPoints();
-    void SetZoom(double zoom);
+    int checkForControlPointClick(const wxPoint& pos);
+    void initializeDefaultPoints();
+    void setZoom(double zoom);
     
-    // Draw the Bezier curve using control points
-    void DrawBezierCurve(wxDC& dc);
+    void drawBezierCurve(wxDC& dc);
 };
 
 #endif // BEZIERCURVEPANEL_H 

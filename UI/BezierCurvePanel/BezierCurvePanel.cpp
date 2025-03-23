@@ -1,40 +1,41 @@
 #include "BezierCurvePanel.h"
 #include <wx/dcbuffer.h>
 
-BezierCurvePanel::BezierCurvePanel(wxWindow* parent, const wxString& name)
-    : wxPanel(parent, wxID_ANY)
-{
-    // Enable double buffering to prevent flickering during redraw
+/**
+ * initializer for the BezierCurvePanel
+ * @param parent The parent window
+ * @param name The name of the panel
+ */
+BezierCurvePanel::BezierCurvePanel(
+    wxWindow* parent, 
+    const wxString& name
+) : wxPanel(parent, wxID_ANY) {
     SetBackgroundStyle(wxBG_STYLE_PAINT);
     
-    // Set white background
     SetBackgroundColour(*wxWHITE);
     
     CreateControls();
     
-    // Initialize with default control points
-    InitializeDefaultPoints();
+    initializeDefaultPoints();
     
-    // Set panel name
     nameLabel->SetLabelText(name);
     
-    // Bind mouse events
-    Bind(wxEVT_LEFT_DOWN, &BezierCurvePanel::OnMouseDown, this);
-    Bind(wxEVT_LEFT_UP, &BezierCurvePanel::OnMouseUp, this);
-    Bind(wxEVT_MOTION, &BezierCurvePanel::OnMouseMove, this);
-    Bind(wxEVT_MOUSEWHEEL, &BezierCurvePanel::OnMouseWheel, this);
-    Bind(wxEVT_PAINT, &BezierCurvePanel::OnPaint, this);
-    Bind(wxEVT_KEY_DOWN, &BezierCurvePanel::OnKeyDown, this);
+    Bind(wxEVT_LEFT_DOWN, &BezierCurvePanel::onMouseDown, this);
+    Bind(wxEVT_LEFT_UP, &BezierCurvePanel::onMouseUp, this);
+    Bind(wxEVT_MOTION, &BezierCurvePanel::onMouseMove, this);
+    Bind(wxEVT_MOUSEWHEEL, &BezierCurvePanel::onMouseWheel, this);
+    Bind(wxEVT_PAINT, &BezierCurvePanel::onPaint, this);
+    Bind(wxEVT_KEY_DOWN, &BezierCurvePanel::onKeyDown, this);
     
-    // Enable keyboard input for this panel
     SetFocus();
 }
 
+/**
+ * creates the controls for the panel
+ */
 void BezierCurvePanel::CreateControls() {
     wxBoxSizer* mainSizer = new wxBoxSizer(wxVERTICAL);
-    
     wxBoxSizer* topSizer = new wxBoxSizer(wxHORIZONTAL);
-    
     nameLabel = new wxStaticText(this, wxID_ANY, "Bezier Curve Panel");
     topSizer->Add(nameLabel, 0, wxALL | wxALIGN_CENTER_VERTICAL, 5);
     
@@ -62,13 +63,15 @@ void BezierCurvePanel::CreateControls() {
     
     SetSizer(mainSizer);
     
-    zoomSlider->Bind(wxEVT_SLIDER, &BezierCurvePanel::OnZoomSlider, this);
+    zoomSlider->Bind(wxEVT_SLIDER, &BezierCurvePanel::onZoomSlider, this);
 }
 
-void BezierCurvePanel::InitializeDefaultPoints() {
+/**
+ * configures the default control points for a cubic Bezier curve
+ */
+void BezierCurvePanel::initializeDefaultPoints() {
     controlPoints.clear();
     
-    // Reset zoom and pan
     zoomFactor = 1.0;
     panOffset = wxPoint(0, 0);
     if (zoomSlider) {
@@ -76,47 +79,51 @@ void BezierCurvePanel::InitializeDefaultPoints() {
         zoomLabel->SetLabelText("Zoom: 100%");
     }
     
-    // Get the size of the panel
     wxSize size = GetClientSize();
     int width = size.GetWidth();
     int height = size.GetHeight();
-    
-    // If the panel size is not yet initialized, use default values
+
+    // The control points appear clustered when first initialized because they're positioned using relative proportions of the panel's client size.
+    // This is a hack to ensure the control points are visible.
     if (width < 100 || height < 100) {
         width = 600;
         height = 400;
     }
     
-    // Create default control points for a cubic Bezier curve
-    controlPoints.push_back(wxPoint(width * 0.1, height * 0.5));  // First point (left)
-    controlPoints.push_back(wxPoint(width * 0.3, height * 0.2));  // Second point (control)
-    controlPoints.push_back(wxPoint(width * 0.7, height * 0.8));  // Third point (control)
-    controlPoints.push_back(wxPoint(width * 0.9, height * 0.5));  // Fourth point (right)
+    controlPoints.push_back(wxPoint(width * 0.1, height * 0.5));
+    controlPoints.push_back(wxPoint(width * 0.3, height * 0.2));
+    controlPoints.push_back(wxPoint(width * 0.7, height * 0.8));
+    controlPoints.push_back(wxPoint(width * 0.9, height * 0.5));
     
     Refresh();
 }
 
-wxPoint BezierCurvePanel::WorldToScreen(const wxPoint& point)
-{
-    // Convert world coordinates to screen coordinates
+/**
+ * converts a point from regular coordinates to onscreen coordinates
+ * @param point The point to convert
+ * @return The point in onscreen coordinates
+ */
+wxPoint BezierCurvePanel::worldToScreen(const wxPoint& point) {
     int x = (point.x * zoomFactor) + panOffset.x;
     int y = (point.y * zoomFactor) + panOffset.y;
     return wxPoint(x, y);
 }
 
-wxPoint BezierCurvePanel::ScreenToWorld(const wxPoint& point)
-{
-    // Convert screen coordinates to world coordinates
+/**
+ * converts a point from onscreen coordinates to regular coordinates
+ * @param point The point to convert
+ * @return The point in regular coordinates
+ */
+wxPoint BezierCurvePanel::screenToWorld(const wxPoint& point) {
     int x = (point.x - panOffset.x) / zoomFactor;
     int y = (point.y - panOffset.y) / zoomFactor;
     return wxPoint(x, y);
 }
 
-void BezierCurvePanel::SetZoom(double zoom)
-{
+void BezierCurvePanel::setZoom(double zoom) {
     // Center of the view in world coordinates before zoom
     wxSize size = GetClientSize();
-    wxPoint center = ScreenToWorld(wxPoint(size.GetWidth() / 2, size.GetHeight() / 2));
+    wxPoint center = screenToWorld(wxPoint(size.GetWidth() / 2, size.GetHeight() / 2));
     
     // Set the new zoom factor
     zoomFactor = zoom;
@@ -127,56 +134,58 @@ void BezierCurvePanel::SetZoom(double zoom)
     zoomSlider->SetValue(zoomPercent);
     
     // Calculate new panOffset to keep the center of the view fixed
-    wxPoint newCenter = WorldToScreen(center);
+    wxPoint newCenter = worldToScreen(center);
     panOffset.x += (size.GetWidth() / 2) - newCenter.x;
     panOffset.y += (size.GetHeight() / 2) - newCenter.y;
     
     Refresh();
 }
 
-int BezierCurvePanel::HitTest(const wxPoint& pos)
-{
-    // Check if the position is over any control point
+/**
+ * checks if the user has clicked a control point
+ * @param pos The position of the mouse
+ * @return The index of the control point that was clicked, or -1 if no control point was clicked
+ */
+int BezierCurvePanel::checkForControlPointClick(const wxPoint& pos) {
     for (size_t i = 0; i < controlPoints.size(); ++i) {
-        wxPoint screenPos = WorldToScreen(controlPoints[i]);
+        wxPoint screenPos = worldToScreen(controlPoints[i]);
         wxPoint diff = pos - screenPos;
         int distanceSquared = diff.x * diff.x + diff.y * diff.y;
         
-        // Scale the hit radius by zoom factor
         int scaledRadius = POINT_RADIUS * zoomFactor;
         
-        // If the distance is less than the point radius, return the index
         if (distanceSquared <= scaledRadius * scaledRadius) {
             return i;
         }
     }
     
-    return -1; // No point was hit
+    // -1 implies no control point was clicked
+    return -1; 
 }
 
-void BezierCurvePanel::OnMouseDown(wxMouseEvent& event)
-{
-    SetFocus(); // Ensure panel gets keyboard events
+/**
+ * if the user clicks the mouse, this function is called.
+ * if the user clicks a control point, the control point is selected.
+ * if the user clicks the middle button or the control key and the left button, the view is panned.
+ * if the user clicks the left button without the control key, a new control point is added.
+ * @param event The mouse event
+ */
+void BezierCurvePanel::onMouseDown(wxMouseEvent& event) {
+    SetFocus();
     
-    // Try to select a control point first
-    selectedPointIndex = HitTest(event.GetPosition());
+    selectedPointIndex = checkForControlPointClick(event.GetPosition());
     
     if (selectedPointIndex == -1) {
-        // If middle button or control+left button, start panning
         if (event.MiddleDown() || (event.LeftDown() && event.ControlDown())) {
             isPanning = true;
             dragStart = event.GetPosition();
             SetCursor(wxCursor(wxCURSOR_HAND));
         }
-        // If no point was selected and left button without control, 
-        // either add a new point (if we have less than MAX)
-        // or start panning if we already have all points
         else if (event.LeftDown() && !event.ControlDown()) {
             if (controlPoints.size() < MAX_CONTROL_POINTS) {
-                controlPoints.push_back(ScreenToWorld(event.GetPosition()));
+                controlPoints.push_back(screenToWorld(event.GetPosition()));
                 selectedPointIndex = controlPoints.size() - 1;
             } else {
-                // We already have all control points, so start panning instead
                 isPanning = true;
                 dragStart = event.GetPosition();
                 SetCursor(wxCursor(wxCURSOR_HAND));
@@ -188,24 +197,33 @@ void BezierCurvePanel::OnMouseDown(wxMouseEvent& event)
     event.Skip();
 }
 
-void BezierCurvePanel::OnMouseUp(wxMouseEvent& event) {
+/**
+ * if the user releases the mouse button, this function is called.
+ * if the user is panning the view, the view is stopped.
+ * @param event The mouse event
+ */
+void BezierCurvePanel::onMouseUp(wxMouseEvent& event) {
     if (isPanning) {
         isPanning = false;
         SetCursor(wxCursor(wxCURSOR_ARROW));
     }
     
-    selectedPointIndex = -1; // Deselect any selected point
+    selectedPointIndex = -1;
     event.Skip();
 }
 
-void BezierCurvePanel::OnMouseMove(wxMouseEvent& event) {
+/**
+ * if the user is dragging the mouse, this function is called invoked by the system
+ * if the user is dragging a control point, the control point is moved.
+ * if the user is panning the view, the view is panned.
+ * @param event The mouse event
+ */
+void BezierCurvePanel::onMouseMove(wxMouseEvent& event) {
     if (selectedPointIndex != -1 && event.Dragging() && event.LeftIsDown()) {
-        // Move the selected control point in world coordinates
-        controlPoints[selectedPointIndex] = ScreenToWorld(event.GetPosition());
+        controlPoints[selectedPointIndex] = screenToWorld(event.GetPosition());
         Refresh();
     }
     else if (isPanning && event.Dragging()) {
-        // Pan the view
         wxPoint currentPos = event.GetPosition();
         wxPoint delta = currentPos - dragStart;
         
@@ -218,8 +236,13 @@ void BezierCurvePanel::OnMouseMove(wxMouseEvent& event) {
     event.Skip();
 }
 
-void BezierCurvePanel::OnMouseWheel(wxMouseEvent& event) {
-    // Use the mouse wheel for vertical panning instead of zooming
+/**
+ * uses the mouse wheel to pan the view.
+ * use shift to pan horizontally.
+ * use regular mouse wheel to pan vertically.
+ * @param event The mouse wheel event
+ */
+void BezierCurvePanel::onMouseWheel(wxMouseEvent& event) {
     int wheelRotation = event.GetWheelRotation();
     int panAmount = wheelRotation / 3; // Make panning speed reasonable
     
@@ -233,34 +256,49 @@ void BezierCurvePanel::OnMouseWheel(wxMouseEvent& event) {
     event.Skip();
 }
 
-void BezierCurvePanel::OnKeyDown(wxKeyEvent& event) {
+/**
+ * if the user presses a key, this function is called.
+ * observes the modifier key and the key code to determine the action.
+ * typically used for zooming in and out.
+ * 
+ * @param event The key event
+ */
+void BezierCurvePanel::onKeyDown(wxKeyEvent& event) {
     if (event.GetModifiers() == wxMOD_CMD) {
-        if (event.GetKeyCode() == '+' || event.GetKeyCode() == WXK_NUMPAD_ADD) {
+        if (event.GetKeyCode() == '=' || event.GetKeyCode() == WXK_NUMPAD_ADD) {
             double newZoom = zoomFactor + 0.1;
-            if (newZoom > 5.0) newZoom = 5.0;
-            SetZoom(newZoom);
+            if (newZoom > 5.0) newZoom = 5.0; 
+            setZoom(newZoom);
         }
         else if (event.GetKeyCode() == '-' || event.GetKeyCode() == WXK_NUMPAD_SUBTRACT) {
             double newZoom = zoomFactor - 0.1;
             if (newZoom < 0.1) newZoom = 0.1;
-            SetZoom(newZoom);
+            setZoom(newZoom);
         }
         else if (event.GetKeyCode() == '0' || event.GetKeyCode() == WXK_NUMPAD0) {
             zoomFactor = 1.0;
             panOffset = wxPoint(0, 0);
-            SetZoom(1.0);
+            setZoom(1.0);
         }
     }
     
     event.Skip();
 }
 
-void BezierCurvePanel::OnZoomSlider(wxCommandEvent& event) {
+/**
+ * This is automatically called when the zoom slider is changed
+ * @param event The command event
+ */
+void BezierCurvePanel::onZoomSlider(wxCommandEvent& event) {
     double newZoom = zoomSlider->GetValue() / 100.0;
-    SetZoom(newZoom);
+    setZoom(newZoom);
 }
 
-void BezierCurvePanel::OnPaint(wxPaintEvent& event) {
+/**
+ * This is automatically called when the panel needs to be redrawn
+ * @param event The paint event
+ */
+void BezierCurvePanel::onPaint(wxPaintEvent& event) {
     wxAutoBufferedPaintDC dc(this);
     dc.Clear();
     
@@ -278,35 +316,29 @@ void BezierCurvePanel::OnPaint(wxPaintEvent& event) {
             dc.DrawLine(x, 0, x, size.GetHeight());
         }
         
-        // Draw horizontal grid lines
         for (int y = startY; y < size.GetHeight(); y += gridSpacing) {
             dc.DrawLine(0, y, size.GetWidth(), y);
         }
     }
     
-    // Draw the control points and their connections
     dc.SetPen(*wxBLACK_PEN);
     
-    // Draw lines connecting control points
     if (controlPoints.size() > 1) {
         dc.SetPen(wxPen(*wxBLUE, 1, wxPENSTYLE_DOT));
         for (size_t i = 0; i < controlPoints.size() - 1; ++i) {
-            wxPoint p1 = WorldToScreen(controlPoints[i]);
-            wxPoint p2 = WorldToScreen(controlPoints[i + 1]);
+            wxPoint p1 = worldToScreen(controlPoints[i]);
+            wxPoint p2 = worldToScreen(controlPoints[i + 1]);
             dc.DrawLine(p1, p2);
         }
     }
     
-    // Draw the Bezier curve if we have all 4 control points
     if (controlPoints.size() == MAX_CONTROL_POINTS) {
-        DrawBezierCurve(dc);
+        drawBezierCurve(dc);
     }
     
-    // Draw the control points on top
     for (size_t i = 0; i < controlPoints.size(); ++i) {
-        wxPoint screenPos = WorldToScreen(controlPoints[i]);
+        wxPoint screenPos = worldToScreen(controlPoints[i]);
         
-        // Use different color for selected point
         if (static_cast<int>(i) == selectedPointIndex) {
             dc.SetBrush(*wxYELLOW_BRUSH);
         } else {
@@ -318,7 +350,6 @@ void BezierCurvePanel::OnPaint(wxPaintEvent& event) {
         if (scaledRadius < 3) scaledRadius = 3; // Minimum radius
         dc.DrawCircle(screenPos, scaledRadius);
         
-        // Draw point number
         wxString pointLabel = wxString::Format("%zu", i+1);
         wxSize textSize = dc.GetTextExtent(pointLabel);
         dc.DrawText(pointLabel, wxPoint(
@@ -328,7 +359,12 @@ void BezierCurvePanel::OnPaint(wxPaintEvent& event) {
     }
 }
 
-// Recursive De Casteljau's algorithm to calculate points on a Bezier curve
+/**
+ * Calculates a point on the Bezier curve using De Casteljau's algorithm
+ * @param points The control points of the Bezier curve
+ * @param t The parameter value (0 <= t <= 1)
+ * @return The point on the Bezier curve
+ */
 wxPoint DeCasteljau(const std::vector<wxPoint>& points, double t) {
     if (points.size() == 1) {
         return points[0];
@@ -348,24 +384,25 @@ wxPoint DeCasteljau(const std::vector<wxPoint>& points, double t) {
     return DeCasteljau(newPoints, t);
 }
 
-void BezierCurvePanel::DrawBezierCurve(wxDC& dc) {
+/**
+ * Draws the Bezier curve using De Casteljau's algorithm
+ * @param dc The device context to draw on
+ */
+void BezierCurvePanel::drawBezierCurve(wxDC& dc) {
     if (controlPoints.size() < 2) {
         return;
     }
     
-    // Draw the Bezier curve using De Casteljau's algorithm
     dc.SetPen(wxPen(*wxGREEN, std::max(2, int(2 * zoomFactor))));
     
     std::vector<wxPoint> curvePoints;
     
-    // Calculate 100 points along the curve
     const int STEPS = 100;
     for (int i = 0; i <= STEPS; ++i) {
         double t = static_cast<double>(i) / STEPS;
-        curvePoints.push_back(WorldToScreen(DeCasteljau(controlPoints, t)));
+        curvePoints.push_back(worldToScreen(DeCasteljau(controlPoints, t)));
     }
     
-    // Draw lines connecting the calculated points
     for (size_t i = 0; i < curvePoints.size() - 1; ++i) {
         dc.DrawLine(curvePoints[i], curvePoints[i + 1]);
     }

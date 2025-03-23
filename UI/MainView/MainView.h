@@ -16,10 +16,10 @@ public:
 
 private:
     wxNotebook* notebook;
-    void OnAddTab(wxCommandEvent& event);
-    void OnCloseTab(wxCommandEvent& event);
-    void OnKeyDown(wxKeyEvent& event);
-    void CreateMenuBar();
+    void onAddTab(wxCommandEvent& event);
+    void onCloseTab(wxCommandEvent& event);
+    void onKeyDown(wxKeyEvent& event);
+    void createMenuBar();
 };
 
 #endif // MAINVIEW_H

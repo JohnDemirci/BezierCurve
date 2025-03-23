@@ -1,8 +1,12 @@
 #include "MainView.h"
 
-MainView::MainView(const wxString& title)
-    : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(600, 400))
-{
+/**
+ * initializer for the MainView
+ * @param title The title of the main view
+ */
+MainView::MainView(
+    const wxString& title
+) : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(600, 400)) {
     wxPanel* panel = new wxPanel(this, wxID_ANY);
     notebook = new wxNotebook(panel, wxID_ANY, wxPoint(0, 0), wxSize(600, 400));
 
@@ -10,21 +14,23 @@ MainView::MainView(const wxString& title)
     sizer->Add(notebook, 1, wxEXPAND | wxALL, 5);
     panel->SetSizer(sizer);
 
-    CreateMenuBar();
+    createMenuBar();
 
-    // Add an initial tab with a Bezier curve panel
     BezierCurvePanel* initialTab = new BezierCurvePanel(notebook, "Bezier Curve 1");
     notebook->AddPage(initialTab, "Bezier Curve 1");
 
-    Bind(wxEVT_MENU, &MainView::OnAddTab, this, ID_NEW_TAB);
-    Bind(wxEVT_MENU, &MainView::OnCloseTab, this, ID_CLOSE_TAB);
+    Bind(wxEVT_MENU, &MainView::onAddTab, this, ID_NEW_TAB);
+    Bind(wxEVT_MENU, &MainView::onCloseTab, this, ID_CLOSE_TAB);
 
-    panel->Bind(wxEVT_KEY_DOWN, &MainView::OnKeyDown, this);
+    panel->Bind(wxEVT_KEY_DOWN, &MainView::onKeyDown, this);
 
     panel->SetFocus();
 }
 
-void MainView::CreateMenuBar() {
+/**
+ * creates the menu bar for the main view
+ */
+void MainView::createMenuBar() {
     wxMenuBar* menuBar = new wxMenuBar;
     wxMenu* fileMenu = new wxMenu;
     
@@ -36,21 +42,36 @@ void MainView::CreateMenuBar() {
     SetMenuBar(menuBar);
 }
 
-void MainView::OnAddTab(wxCommandEvent& event) {
+/**
+ * typically used for keyboard shortcuts to add a new tab or close a tab.
+ * @param event The key event
+ */
+void MainView::onAddTab(wxCommandEvent& event) {
     int tabCount = notebook->GetPageCount() + 1;
-    // Create a Bezier curve panel for the new tab
     BezierCurvePanel* newTab = new BezierCurvePanel(notebook, wxString::Format("Bezier Curve %d", tabCount));
     notebook->AddPage(newTab, wxString::Format("Bezier Curve %d", tabCount));
 }
 
-void MainView::OnCloseTab(wxCommandEvent& event) {
+/**
+ * This is automatically called when a key is pressed
+ * observes the modifier key and the key code to determine the action.
+ * typically used for keyboard shortcuts to add a new tab or close a tab.
+ * @param event The key event
+ */
+void MainView::onCloseTab(wxCommandEvent& event) {
     int selection = notebook->GetSelection();
     if (selection != wxNOT_FOUND && notebook->GetPageCount() > 1) {
         notebook->DeletePage(selection);
     }
 }
 
-void MainView::OnKeyDown(wxKeyEvent& event) {
+/**
+ * This is automatically called when a key is pressed
+ * observes the modifier key and the key code to determine the action.
+ * typically used for keyboard shortcuts to add a new tab or close a tab.
+ * @param event The key event
+ */
+void MainView::onKeyDown(wxKeyEvent& event) {
     if (event.GetModifiers() == wxMOD_CMD) {
         if (event.GetKeyCode() == 'T') {
             wxCommandEvent evt(wxEVT_COMMAND_MENU_SELECTED, ID_NEW_TAB);
